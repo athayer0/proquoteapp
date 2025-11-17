@@ -1,1 +1,185 @@
-<h1>placeholder</h1>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quote Fetcher</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --fg: #e6edf3;
+      --muted: #9aa6b2;
+      --accent: #6ea8fe;
+      --accent-press: #5a93e6;
+      --card: #131a22;
+      --ring: #254b88;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f7f9fb;
+        --fg: #0b1220;
+        --muted: #52616f;
+        --accent: #3b82f6;
+        --accent-press: #306ad1;
+        --card: #ffffff;
+        --ring: #cfe0ff;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 50% -10%, rgba(110,168,254,.15), transparent 70%), var(--bg);
+      color: var(--fg);
+      display: grid;
+      place-items: center;
+      line-height: 1.6;
+    }
+
+    .wrap {
+      width: 75vw;               /* 75% of viewport width */
+      max-width: 72ch;           /* Prevent overly long line length */
+      margin-inline: auto;
+      display: grid;
+      gap: 1.25rem;
+      align-items: center;
+      justify-items: center;     /* center content horizontally */
+    }
+
+    .card {
+      width: 100%;
+      background: linear-gradient(180deg, color-mix(in oklab, var(--card), transparent 0%), color-mix(in oklab, var(--card), transparent 8%));
+      border: 1px solid color-mix(in oklab, var(--ring), transparent 60%);
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.15);
+      padding: clamp(1rem, 2vw + .5rem, 1.5rem);
+    }
+
+    h1 {
+      font-size: clamp(1.25rem, 1rem + 1.2vw, 2rem);
+      margin: 0 0 .25rem 0;
+      text-align: center;
+      letter-spacing: .2px;
+    }
+
+    p.lead {
+      margin: 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: clamp(.9rem, .8rem + .35vw, 1rem);
+    }
+
+    .actions {
+      display: flex;
+      gap: .75rem;
+      align-items: center;
+      justify-content: center;   /* center button area */
+      margin-top: .75rem;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: .8rem 1.1rem;
+      font-weight: 600;
+      font-size: 1rem;
+      background: linear-gradient(180deg, var(--accent), var(--accent-press));
+      color: white;
+      box-shadow: 0 6px 18px rgba(59, 130, 246, .35);
+      cursor: pointer;
+      transition: transform .08s ease, filter .2s ease, box-shadow .2s ease;
+    }
+
+    button:hover { filter: brightness(1.05); }
+    button:active { transform: translateY(1px) scale(.995); }
+    button:focus-visible { outline: 4px solid var(--ring); outline-offset: 2px; }
+
+    .quote {
+      margin-top: .5rem;
+      font-size: clamp(1.1rem, 1rem + .9vw, 1.6rem);
+      text-align: center;        /* center the quote text */
+      font-weight: 500;
+    }
+
+    .status {
+      font-size: .95rem;
+      color: var(--muted);
+      text-align: center;
+      min-height: 1.4em;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: .85rem;
+      margin-top: .25rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card" role="region" aria-labelledby="title">
+      <h1 id="title">Daily Dose of Wisdom</h1>
+      <p class="lead">Tap the button to fetch a fresh quote.</p>
+
+      <div class="actions">
+        <button id="getQuoteBtn" type="button" aria-controls="quote" aria-describedby="status">Get a Quote</button>
+      </div>
+
+      <div id="status" class="status" aria-live="polite"></div>
+
+      <blockquote id="quote" class="quote" cite="https://quote.cs260.click" aria-live="polite"></blockquote>
+    </section>
+
+    <p class="footer">The quote area is sized to 75% of the viewport width and adapts to orientation changes.</p>
+  </main>
+
+  <script>
+    const btn = document.getElementById('getQuoteBtn');
+    const quoteEl = document.getElementById('quote');
+    const statusEl = document.getElementById('status');
+
+    async function fetchQuote() {
+      statusEl.textContent = 'Fetching…';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('https://quote.cs260.click', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        // The endpoint returns plain text
+        const text = await res.text();
+
+        // Trim and normalize whitespace just in case
+        const cleaned = text.replace(/\s+/g, ' ').trim();
+        quoteEl.textContent = cleaned || 'No quote received.';
+        statusEl.textContent = '';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Could not fetch a quote. Please try again.';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    btn.addEventListener('click', fetchQuote);
+
+    // Optional: fetch one on first load so the page isn\'t empty
+    // Comment this out if you prefer manual only
+    fetchQuote();
+
+    // Be responsive to orientation/resize; no action needed because width uses vw
+    // but we can reflow long text by toggling the quote element (forces re-layout in some browsers)
+    addEventListener('orientationchange', () => {
+      quoteEl.style.transform = 'scale(1)';
+      requestAnimationFrame(() => (quoteEl.style.transform = ''));
+    });
+  </script>
+</body>
+</html>
+
