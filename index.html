@@ -153,11 +153,10 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         // The endpoint returns plain text
-        const text = await res.text();
+        const text = await res.json();
 
         // Trim and normalize whitespace just in case
-        const cleaned = text.replace(/\s+/g, ' ').trim();
-        quoteEl.textContent = cleaned || 'No quote received.';
+        quoteEl.textContent = text.quote || 'No quote received.';
         statusEl.textContent = '';
       } catch (err) {
         console.error(err);
